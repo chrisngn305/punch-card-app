@@ -1,0 +1,21 @@
+{
+  "name": "punch-card-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Punchcard, a staff time clock kiosk with admin timesheets, roster and team management.",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "build": "node scripts/build.js",
+    "db:setup": "node --env-file-if-exists=.env scripts/db-setup.js",
+    "db:migrate-sqlite": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning scripts/migrate-sqlite.js",
+    "admin": "node --env-file-if-exists=.env scripts/admin.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "nodemailer": "^10.1.1",
+    "postgres": "^3.4.9"
+  }
+}
