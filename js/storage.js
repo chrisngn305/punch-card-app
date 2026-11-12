@@ -1,11 +1,15 @@
-// App data lives in the server's Postgres database (see /db.js); per-device
-// preferences (theme, language, roster view) stay in localStorage.
+// App data lives in the server's Postgres database (see /db.js), or in this
+// browser while the demo runs (demo.js); per-device preferences (theme,
+// language, roster view) stay in localStorage.
+import { inDemo, demoRequest } from './demo.js';
+
 const TKEY = 'punchcard.theme', LKEY = 'punchcard.lang', RKEY = 'punchcard.rosterView';
 const TABLES = ['staff', 'shifts', 'entries'];
 
 // JSON request to the API. Resolves to { ok, status, data } and never throws
 // for HTTP errors, so callers can show the server's error message.
 export async function request(method, path, body) {
+  if (inDemo()) return demoRequest(method, '/' + path, body);
   const res = await fetch(path, {
     method, cache: 'no-store',
     ...(body !== undefined && { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),

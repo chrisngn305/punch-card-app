@@ -3,14 +3,17 @@ import { dkey, sod, addDays, weekStart, toMin, at, uid, areaForRole, MINUTE } fr
 // Test inbox for the demo staff. Gmail delivers "name+tag@gmail.com" to the same
 // inbox, so each person's roster email arrives tagged with their first name.
 const TEST_INBOX = 'vanhuu3005@gmail.com';
+const tag = name => name.split(' ')[0].normalize('NFD').replace(/[^a-zA-Z]/g, '').toLowerCase();
 export const testEmail = name => {
   const [user, domain] = TEST_INBOX.split('@');
-  return `${user}+${name.split(' ')[0].normalize('NFD').replace(/[^a-zA-Z]/g, '').toLowerCase()}@${domain}`;
+  return `${user}+${tag(name)}@${domain}`;
 };
+// For the browser demo, which never sends email: placeholder addresses only.
+export const exampleEmail = name => `${tag(name)}@example.com`;
 
 // Demo data: 8 staff, a three-week roster around today, and clock entries
 // for every rostered shift that has already started.
-export function seed() {
+export function seed(emailFor = testEmail) {
   const staff = [
     ['Maya Chen', 'Shift Lead', '1234', 24],
     ['Tomás Rivera', 'Barista', '2580', 18.5],
@@ -22,7 +25,7 @@ export function seed() {
     ['Daniel Kim', 'Manager', '8642', 28],
   ].map((a, i) => ({
     id: 's' + (i + 1), name: a[0], role: a[1], pin: a[2], rate: a[3], active: true, tone: i,
-    email: testEmail(a[0]),
+    email: emailFor(a[0]),
     phone: '',
   }));
 

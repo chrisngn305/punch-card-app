@@ -36,6 +36,17 @@ A staff time clock kiosk with an admin area for timesheets, rosters and team man
 - **Database storage:** data is kept in Postgres (Supabase). Screens sync every 10 seconds, so a clock-in on the kiosk appears in the admin view.
 - Demo data can be added to an empty database with `npm run db:setup -- --demo`: 8 staff, a three-week roster around today, and clock entries for past shifts.
 
+## Try the demo (no database)
+
+Click **Try demo** in the kiosk header to explore the whole app (kiosk, admin, timesheets, roster, staff) with sample data and no database. The demo runs entirely in the browser:
+
+- It starts with the same sample data as `npm run db:setup -- --demo`: 8 staff, a three-week roster and past clock entries. The staff have placeholder `@example.com` addresses.
+- Admin opens straight away, with no sign-in.
+- Your changes are saved in this browser's localStorage, so reloading the page keeps you in the demo. The banner at the top has **Reset data**, which restarts with fresh sample data, and **Exit demo**, which deletes the demo data and goes back to the real app.
+- Nothing is sent. **Send roster** only records each email as a preview.
+
+The server starts without a `DATABASE_URL` too. Every API request then answers `503`, and the kiosk shows a notice that offers the demo instead of a database. This means a Vercel deployment without Supabase, or any static host serving the browser files, works as a demo site.
+
 ## Deploy to Vercel + Supabase
 
 Vercel serves the browser app from its CDN and runs the API as a serverless function (`api/index.js`). Vercel has no database of its own, so the data lives in a Supabase Postgres database.
@@ -137,7 +148,7 @@ MAIL_FROM="Punchcard <you@gmail.com>"
 
 Outlook/Office 365 uses `smtp.office365.com` on port `587`. Any other provider works with its SMTP details. Add each staff member's email in **Staff → Edit**. The demo staff use test addresses that all go to one Gmail inbox, tagged by first name (`vanhuu3005+maya@gmail.com`, `vanhuu3005+tomas@gmail.com`, and so on), so you can see exactly what each person receives. To use a different test inbox, change `TEST_INBOX` in `js/seed.js`. That only affects new demo data; edit existing staff in **Staff → Edit**.
 
-> The app needs its API, so opening `index.html` directly or using a plain static server won't work.
+> The real app needs its API and a database. Without them only **Try demo** works, and that also needs the files served over HTTP (for example `npm start` with no `DATABASE_URL`), not `index.html` opened directly.
 >
 > **Security:** the admin dashboard and its API need a signed-in admin. The kiosk only gets what the person who entered their PIN is allowed to see: their own shift, hours and details, never other people's PINs. Repeated wrong PINs (10 in 5 minutes) or failed sign-ins (10 in 15 minutes) from one device are blocked for a while; the counts are kept in the database so they hold across serverless instances. Vercel serves HTTPS; if you run `npm start` on a shared network instead, put it behind HTTPS (for example a reverse proxy) and set `COOKIE_SECURE=true` and `TRUST_PROXY=true`.
 
@@ -196,7 +207,7 @@ Edit `js/config.js`:
 | `defaultLang`   | `'en'`   | `'en'` or `'vi'` (until a device picks its own)   |
 | `currency`      | `'$'`    | Currency symbol for pay (`$`, `£`, `€`)           |
 | `autoReturn`    | `4`      | Seconds before the kiosk resets after an action   |
-| `showDemoHints` | `true`   | Show demo PINs under the kiosk keypad             |
+| `showDemoHints` | `true`   | Show demo PINs under the kiosk keypad (always shown in the demo) |
 
 ## Project structure
 
@@ -207,7 +218,6 @@ handler.js          The JSON API (admin + kiosk routes), shared by server.js and
 api/index.js        Vercel serverless function (all /api/* requests)
 vercel.json         Vercel build, output folder and /api rewrite
 auth.js             Password hashing, sessions, rate limiting
-kiosk.js            Kiosk actions on the server: PIN check, clock in/out, profile
 db.js               Postgres connection and queries
 schema.sql          Database tables (run by `npm run db:setup`)
 notify.js           Roster emails: message builder + SMTP sending (nodemailer)
@@ -220,7 +230,9 @@ js/app.js           State, event wiring, kiosk & admin actions
 js/config.js        App settings
 js/i18n.js          English / Vietnamese strings and t() helper
 js/storage.js       API client (load + diff-based save); theme/lang prefs
-js/seed.js          Demo data generator (used by `npm run db:setup -- --demo`)
+js/kiosk.js         Kiosk actions: PIN check, clock in/out, profile (run by the server, and by the demo)
+js/demo.js          "Try demo": answers API requests in the browser from localStorage
+js/seed.js          Demo data generator (used by `npm run db:setup -- --demo` and the demo)
 js/viewmodel.js     Derives view data from state
 js/morph.js         Minimal DOM diffing
 js/html.js          Tagged-template HTML helper

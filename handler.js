@@ -1,7 +1,7 @@
 // The JSON API, shared by the local server (server.js) and the Vercel function
 // (api/index.js). Admin endpoints need a signed-in admin (auth.js); the kiosk
 // endpoints only need the staff member's PIN and never expose other people's
-// data (kiosk.js).
+// data (js/kiosk.js).
 import { openDb } from './db.js';
 import { shiftH } from './js/utils.js';
 import { emailConfig, isWeekKey, weekShifts, fingerprint, rosterEmail, sendEmail } from './notify.js';
@@ -9,7 +9,7 @@ import {
   hashPassword, verifyPassword, burnPasswordCheck, newToken, hashToken, readSessionToken, sessionCookie, clearCookie,
   rateLimiter, isEmail, SESSION_MS, MIN_PASSWORD,
 } from './auth.js';
-import { staffByPin, onClockCount, meView, clock, updateProfile } from './kiosk.js';
+import { staffByPin, onClockCount, meView, clock, updateProfile } from './js/kiosk.js';
 
 // Dates ("today", roster weeks) are worked out in the server's time zone. Hosts
 // like Vercel run in UTC, so APP_TZ sets the venue's zone, e.g. Australia/Sydney.
@@ -19,11 +19,13 @@ const secureCookies = process.env.COOKIE_SECURE === 'true'; // set when served o
 // Behind Vercel's proxy the socket address is the proxy's, so use the client IP
 // header Vercel sets (it overwrites any value the client sends).
 const trustProxy = process.env.TRUST_PROXY === 'true' || !!process.env.VERCEL;
-const db = openDb();
+// Without DATABASE_URL the server still starts (so the browser demo works),
+// but every API request answers 503.
+const db = process.env.DATABASE_URL ? openDb() : null;
 
 // Brute-force protection, per client IP.
-const loginLimiter = rateLimiter(db.limits, 'login', 10, 15 * 60 * 1000); // 10 failed logins per 15 min
-const pinLimiter = rateLimiter(db.limits, 'pin', 10, 5 * 60 * 1000);      // 10 wrong PINs per 5 min
+const loginLimiter = db && rateLimiter(db.limits, 'login', 10, 15 * 60 * 1000); // 10 failed logins per 15 min
+const pinLimiter = db && rateLimiter(db.limits, 'pin', 10, 5 * 60 * 1000);      // 10 wrong PINs per 5 min
 
 const clientIp = req => (trustProxy &&
   (req.headers['x-real-ip'] || String(req.headers['x-forwarded-for'] || '').split(',')[0].trim())) ||
@@ -201,6 +203,7 @@ export async function handleApi(req, res) {
     url = new URL(req.url, 'http://localhost');
     path = decodeURIComponent(url.pathname).replace(/\/+$/, '');
   } catch { return json(res, 400, { error: 'Bad request' }); }
+  if (!db) return json(res, 503, { error: 'err.noDb' });
   try {
     await api(req, res, path, url.searchParams);
   } catch (e) {

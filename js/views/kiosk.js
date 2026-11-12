@@ -14,6 +14,7 @@ export function kioskView(v) {
     <div class="kiosk-header-tools">
       <span class="on-now"><span class="dot dot-green"></span>${v.onNowLabel}</span>
       ${headerToggles(v, 'pill-btn')}
+      ${!v.demo && html`<button class="pill-btn" data-action="tryDemo">${t('demo.try')}</button>`}
       <button class="pill-btn" data-action="openAdmin">${t('kiosk.admin')}</button>
     </div>
   </header>
@@ -29,6 +30,11 @@ export function kioskView(v) {
     </section>
 
     <section class="kiosk-panel">
+      ${v.offline && v.step === 'pin' && html`
+      <div class="notice demo-offer">
+        <span>${t('demo.noServer')}</span>
+        <button class="btn btn-accent" data-action="tryDemo">${t('demo.try')}</button>
+      </div>`}
       ${v.step === 'pin' && pinPad(v)}
       ${v.step === 'staff' && v.me && staffPanel(v)}
       ${v.step === 'profile' && v.pf && profilePanel(v.pf)}

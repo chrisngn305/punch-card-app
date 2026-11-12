@@ -34,6 +34,18 @@ export const brkMs = (e, now) => e.breaks.reduce((s, b) => s + ((b.end || now) -
 export const workMs = (e, now) => Math.max(0, (e.out || now) - e.in - brkMs(e, now));
 export const brkLabel = m => m === 0 ? t('brk.none') : m < 60 ? t('brk.min', { m }) : (m % 60 ? t('brk.hm', { h: Math.floor(m / 60), m: m % 60 }) : t('brk.hr', { h: m / 60 }));
 export const shiftH = sh => (toMin(sh.end) - toMin(sh.start)) / 60;
+export const isEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
+
+// Roster notifications (used by /notify.js and the demo).
+export const isWeekKey = k => /^\d{4}-\d{2}-\d{2}$/.test(k || '') && new Date(fromKey(k)).getDay() === 1;
+export function weekShifts(data, staffId, weekStart) {
+  const end = dkey(addDays(fromKey(weekStart), 6));
+  return data.shifts
+    .filter(x => x.staffId === staffId && x.date >= weekStart && x.date <= end)
+    .sort((a, b) => a.date.localeCompare(b.date) || toMin(a.start) - toMin(b.start));
+}
+// Identifies exactly what was sent, so the UI can flag rosters changed since.
+export const fingerprint = list => list.map(x => `${x.date} ${x.start}-${x.end} ${x.area}`).join('|');
 
 export const initials = n => n.split(' ').filter(Boolean).map(x => x[0]).join('').slice(0, 2).toUpperCase();
 export const firstName = n => n.split(' ')[0];

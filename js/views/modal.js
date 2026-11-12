@@ -71,7 +71,7 @@ const notifyForm = (f, v) => {
   <div class="muted small">${t('nt.intro')}</div>
   ${n.configured
     ? html`<div class="muted small">${t('nt.from', { from: n.from })}</div>`
-    : html`<div class="notice">${t('nt.notConfigured')}</div>`}
+    : html`<div class="notice">${t(n.demo ? 'nt.demo' : 'nt.notConfigured')}</div>`}
   ${n.empty ? html`<div class="empty empty-sm">${t('nt.empty')}</div>` : html`
   <div class="nt-pick">
     <button type="button" class="text-btn" data-action="notifyPick" data-mode="needed">${t('nt.selectNeeded')}</button>

@@ -36,7 +36,7 @@ export function buildView(s, cfg) {
 function commonView(s, cfg) {
   const d = new Date(s.now), tn = themeName(s, cfg);
   return {
-    mode: s.mode, toast: s.toast,
+    mode: s.mode, toast: s.toast, demo: s.demo, offline: s.offline,
     themeLabel: t(tn === 'dark' ? 'common.lightMode' : 'common.darkMode'),
     langLabel: LANGS[getLang() === 'vi' ? 'en' : 'vi'], langCode: getLang() === 'vi' ? 'en' : 'vi',
     isDark: tn === 'dark',
@@ -93,7 +93,7 @@ function buildKioskView(s, cfg) {
     dots: [0, 1, 2, 3].map(i => s.pinError ? 'is-error' : i < s.pin.length ? 'is-filled' : ''),
     me, actions, cf, done: s.done,
     pf: s.pf && { ...s.pf, error: s.pfError, busy: !!s.pfBusy },
-    showHints: cfg.showDemoHints,
+    showHints: s.demo || cfg.showDemoHints,
   };
 }
 
@@ -241,7 +241,7 @@ function buildAdminView(s, cfg) {
     notify = {
       title: t('nt.title', { range: rangeLabel(fromKey(n.week)) }),
       loading: !!n.loading, error: !!n.error, sending: !!n.sending,
-      configured: !!d?.email.configured, from: d?.email.from || '',
+      configured: !!d?.email.configured, from: d?.email.from || '', demo: !!d?.email.demo,
       rows: (d?.recipients || []).map(r => {
         const p = byId[r.staffId], st = r.last && STATUS[r.last.status];
         const hasEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email || '');

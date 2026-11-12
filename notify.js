@@ -2,7 +2,7 @@
 // and sends it over SMTP. Without SMTP_HOST set, emails are only printed to
 // the server log (status "preview") so nothing leaves the machine.
 import { t, tv, setLang, LANGS } from './js/i18n.js';
-import { dkey, fromKey, addDays, rangeLabel, dlabel, shiftH, toMin } from './js/utils.js';
+import { fromKey, rangeLabel, dlabel, shiftH } from './js/utils.js';
 
 const env = process.env;
 
@@ -26,18 +26,7 @@ async function getTransport() {
   return transport;
 }
 
-export const isWeekKey = k => /^\d{4}-\d{2}-\d{2}$/.test(k || '') && new Date(fromKey(k)).getDay() === 1;
-export const isEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
-
-export function weekShifts(data, staffId, weekStart) {
-  const end = dkey(addDays(fromKey(weekStart), 6));
-  return data.shifts
-    .filter(x => x.staffId === staffId && x.date >= weekStart && x.date <= end)
-    .sort((a, b) => a.date.localeCompare(b.date) || toMin(a.start) - toMin(b.start));
-}
-
-// Identifies exactly what was sent, so the UI can flag rosters changed since.
-export const fingerprint = list => list.map(x => `${x.date} ${x.start}-${x.end} ${x.area}`).join('|');
+export { isWeekKey, weekShifts, fingerprint } from './js/utils.js';
 
 const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 

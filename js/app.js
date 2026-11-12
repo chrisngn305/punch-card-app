@@ -7,6 +7,7 @@ import {
   pad, dkey, fromKey, addDays, toMin, at, hm, dur, brkMs, workMs, brkLabel,
   uid, firstName, areaForRole, TONES, HOUR, MINUTE,
 } from './utils.js';
+import { inDemo, resumeDemo, startDemo, endDemo, DEMO_ADMIN } from './demo.js';
 import { buildView, themeName, openEntryFor, timesheetEntries, timesheetWeekStart, rosterWeekStart } from './viewmodel.js';
 import { appView } from './views/index.js';
 import { morph } from './morph.js';
@@ -19,6 +20,7 @@ setLang(loadLang() || config.defaultLang || 'en');
 let state = {
   data: null, theme: loadTheme(), lang: getLang(),
   mode: 'kiosk', // 'kiosk' | 'login' | 'admin'
+  demo: false, offline: false, // offline: no server or database, so only the demo works
   auth: { admin: null, setupNeeded: false },
   // kiosk: `me` is the signed-in staff member's own record from the server
   pin: '', pinError: false, pinErrorMsg: '', step: 'pin', me: null, onClock: 0, busy: false,
@@ -226,6 +228,7 @@ async function saveProfile() {
 
 // ── Admin sign-in ──────────────────────────────────────────
 async function openAdmin() {
+  if (state.demo) return enterAdmin({ admin: DEMO_ADMIN, setupNeeded: false }); // no sign-in in the demo
   const r = await request('GET', 'api/auth').catch(() => null);
   const auth = r?.ok ? r.data : state.auth;
   if (auth.admin) return enterAdmin(auth);
@@ -273,6 +276,36 @@ function sessionEnded() {
     auth: { admin: null, setupNeeded: false }, mode: 'login', data: null, modal: null, notify: null,
     login: { name: '', email: '', password: '', password2: '' }, loginError: t('err.sessionEnded'),
   });
+}
+
+// ── Demo ───────────────────────────────────────────────────
+// The demo runs entirely in this browser (demo.js), so it works without a database.
+function tryDemo() {
+  startDemo();
+  showDemo();
+  flash(t('demo.started'));
+}
+
+function showDemo() {
+  resetKiosk();
+  setState({ demo: true, offline: false, mode: 'kiosk', auth: { admin: null, setupNeeded: false }, data: null, modal: null, notify: null });
+  refreshKiosk();
+}
+
+async function resetDemo() {
+  startDemo();
+  closeModal();
+  if (state.mode === 'admin') setState({ data: await loadData() });
+  else resetKiosk();
+  refreshKiosk();
+  flash(t('demo.resetDone'));
+}
+
+function exitDemo() {
+  endDemo();
+  resetKiosk();
+  setState({ demo: false, mode: 'kiosk', auth: { admin: null, setupNeeded: false }, data: null, modal: null, notify: null, onClock: 0 });
+  connect();
 }
 
 // ── Admin ──────────────────────────────────────────────────
@@ -364,7 +397,8 @@ async function sendRoster() {
       flash(t('toast.sendFailed', { n: failed }));
       setState({ notify: { week: n.week, data: res, selected: res.recipients.filter(needsSend).map(r => r.staffId) } });
     } else {
-      flash(count('preview') ? t('toast.previewed', { n: count('preview') }) : t('toast.sent', { n: count('sent') }));
+      flash(state.demo ? t('toast.demoPreviewed', { n: count('preview') })
+        : count('preview') ? t('toast.previewed', { n: count('preview') }) : t('toast.sent', { n: count('sent') }));
       closeModal();
     }
   } catch (e) {
@@ -471,6 +505,7 @@ const actions = {
   // kiosk
   press: ({ key }) => press(key),
   openAdmin,
+  tryDemo, resetDemo, exitDemo,
   backToKiosk: () => { setState({ mode: 'kiosk', loginError: '' }); refreshKiosk(); },
   signOut,
   openProfile,
@@ -578,13 +613,23 @@ setInterval(() => (state.mode === 'admin' ? refresh() : state.mode === 'kiosk' &
 
 applyTheme(themeName(state, config));
 document.documentElement.lang = getLang();
-root.innerHTML = `<div class="boot">${t('common.loading')}</div>`;
 // Start in the admin dashboard if this browser still has a valid admin session.
-request('GET', 'api/auth')
-  .then(r => {
-    if (!r.ok) throw new Error();
-    if (r.data.admin) return enterAdmin(r.data);
-    setState({ auth: r.data });
-    return refreshKiosk();
-  })
-  .catch(() => { root.innerHTML = `<div class="boot is-error">${t('common.loadFailed')}</div>`; });
+// Without a server or database, show the kiosk with the option to try the demo.
+function connect() {
+  return request('GET', 'api/auth')
+    .then(r => {
+      if (inDemo()) return; // "Try demo" was clicked while this was loading
+      if (!r.ok) throw new Error();
+      setState({ offline: false });
+      if (r.data.admin) return enterAdmin(r.data);
+      setState({ auth: r.data });
+      return refreshKiosk();
+    })
+    .catch(() => { if (!inDemo()) setState({ offline: true }); });
+}
+
+if (resumeDemo()) showDemo();
+else {
+  root.innerHTML = `<div class="boot">${t('common.loading')}</div>`;
+  connect();
+}

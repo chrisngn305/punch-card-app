@@ -37,7 +37,7 @@ export const sessionCookie = (token, secure) =>
   `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_MS / 1000}${secure ? '; Secure' : ''}`;
 export const clearCookie = () => `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`;
 
-export const isEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
+export { isEmail } from './js/utils.js';
 
 // Allows `max` failures per `windowMs` for each key (e.g. client IP), then blocks
 // until the window passes. A success clears the key. Counts live in the database

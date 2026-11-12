@@ -1,7 +1,7 @@
 // Kiosk actions, done on the server so the browser never sees other people's
-// PINs or data. Every request carries the staff member's PIN.
-import { sod, dkey, toMin, brkMs, workMs, uid, MINUTE } from './js/utils.js';
-import { isEmail } from './auth.js';
+// PINs or data. Every request carries the staff member's PIN. The demo
+// (demo.js) runs the same code in the browser.
+import { sod, dkey, toMin, brkMs, workMs, uid, isEmail, MINUTE } from './utils.js';
 
 const openEntryFor = (data, id) => data.entries.find(e => e.staffId === id && !e.out) || null;
 
