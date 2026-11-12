@@ -213,8 +213,8 @@ Edit `js/config.js`:
 
 ```
 index.html          Entry page
-server.js           Local server: static files + the API
-handler.js          The JSON API (admin + kiosk routes), shared by server.js and Vercel
+dev-server.js       Local server: static files + the API
+handler.js          The JSON API (admin + kiosk routes), shared by dev-server.js and Vercel
 api/index.js        Vercel serverless function (all /api/* requests)
 vercel.json         Vercel build, output folder and /api rewrite
 auth.js             Password hashing, sessions, rate limiting

@@ -1,4 +1,4 @@
-// The JSON API, shared by the local server (server.js) and the Vercel function
+// The JSON API, shared by the local server (dev-server.js) and the Vercel function
 // (api/index.js). Admin endpoints need a signed-in admin (auth.js); the kiosk
 // endpoints only need the staff member's PIN and never expose other people's
 // data (js/kiosk.js).
